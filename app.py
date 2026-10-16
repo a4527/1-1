@@ -45,6 +45,15 @@ def cmd_list(args):
     if not posts:
         print("등록된 글이 없습니다.")
         return
+    if args.keyword:
+        keyword = args.keyword.lower()
+        posts = [
+            p for p in posts
+            if keyword in p["title"].lower() or keyword in p["content"].lower()
+        ]
+        if not posts:
+            print("검색 결과가 없습니다.")
+            return
     for post in sorted(posts, key=lambda p: p["id"], reverse=True):
         print(f"[{post['id']}] {post['title']} - {post['author']} ({post['date']})")
 
@@ -83,6 +92,7 @@ def build_parser():
     add.set_defaults(func=cmd_add)
 
     lst = sub.add_parser("list", help="글 목록")
+    lst.add_argument("--keyword", help="제목이나 내용에 이 단어가 들어간 글만 보기")
     lst.set_defaults(func=cmd_list)
 
     show = sub.add_parser("show", help="글 보기")
