@@ -36,3 +36,5 @@ export interface TaskEdit {
 
 export const updateTask = (id: number, body: TaskEdit | { status: Status }) =>
   request<Task>(`/api/tasks/${id}`, { method: 'PATCH', body: JSON.stringify(body) })
+
+export const deleteTask = (id: number) => request<void>(`/api/tasks/${id}`, { method: 'DELETE' })

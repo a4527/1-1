@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from datetime import date
 from typing import Annotated, Literal
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, StringConstraints, model_validator
 
@@ -77,3 +77,10 @@ def update_task(task_id: int, body: TaskPatch) -> dict:
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
     return task
+
+
+@app.delete("/api/tasks/{task_id}", status_code=204)
+def delete_task(task_id: int) -> Response:
+    if not store.delete_task(task_id):
+        raise HTTPException(status_code=404, detail="Task not found")
+    return Response(status_code=204)

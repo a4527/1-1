@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { createTask, listTasks, updateTask } from './api'
+import EditModal from './EditModal'
 import type { Status, Task } from './api'
 
 const COLUMNS: { status: Status; label: string }[] = [
@@ -19,6 +20,8 @@ function App() {
   const [titleError, setTitleError] = useState('')
   const [creating, setCreating] = useState(false)
   const [busyIds, setBusyIds] = useState<number[]>([])
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const editing = tasks.find((t) => t.id === editingId)
 
   useEffect(() => {
     listTasks().then(setTasks)
@@ -81,7 +84,7 @@ function App() {
               </h2>
               <div className="cards">
                 {cards.map((t) => (
-                  <article className="card" key={t.id}>
+                  <article className="card" key={t.id} onClick={() => setEditingId(t.id)}>
                     <h3>{t.title}</h3>
                     <span className={`priority ${t.priority}`}>{PRIORITY_LABEL[t.priority]}</span>
                     {t.due_date && <p className="due">{t.due_date}</p>}
@@ -90,7 +93,10 @@ function App() {
                         <button
                           key={c.status}
                           disabled={t.status === c.status || busyIds.includes(t.id)}
-                          onClick={() => handleStatus(t, c.status)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleStatus(t, c.status)
+                          }}
                           aria-label={`${t.title}: ${STATUS_LABEL[c.status]}(으)로 변경`}
                         >
                           {c.label}
@@ -104,6 +110,21 @@ function App() {
           )
         })}
       </main>
+      {editing && (
+        <EditModal
+          key={editing.id}
+          task={editing}
+          onClose={() => setEditingId(null)}
+          onSaved={(saved) => {
+            setTasks((prev) => prev.map((t) => (t.id === saved.id ? saved : t)))
+            setEditingId(null)
+          }}
+          onDeleted={(id) => {
+            setTasks((prev) => prev.filter((t) => t.id !== id))
+            setEditingId(null)
+          }}
+        />
+      )}
     </div>
   )
 }
