@@ -206,3 +206,27 @@ button:disabled {
 .danger {
   color: #b91c1c;
 }
+
+.column-note {
+  margin: 0;
+  padding: 8px 0;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.column-note.error {
+  color: #b91c1c;
+}
+
+.column-note.error p {
+  margin: 0 0 8px;
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 24px;
+  color: #991b1b;
+  background: #fee2e2;
+}
