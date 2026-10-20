@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { createTask, listTasks } from './api'
+import { createTask, listTasks, updateTask } from './api'
 import type { Status, Task } from './api'
 
 const COLUMNS: { status: Status; label: string }[] = [
@@ -9,6 +9,8 @@ const COLUMNS: { status: Status; label: string }[] = [
   { status: 'done', label: '완료' },
 ]
 
+const STATUS_LABEL = Object.fromEntries(COLUMNS.map((c) => [c.status, c.label]))
+
 const PRIORITY_LABEL = { urgent: '임박', normal: '보통', low: '여유' }
 
 function App() {
@@ -16,6 +18,7 @@ function App() {
   const [title, setTitle] = useState('')
   const [titleError, setTitleError] = useState('')
   const [creating, setCreating] = useState(false)
+  const [busyIds, setBusyIds] = useState<number[]>([])
 
   useEffect(() => {
     listTasks().then(setTasks)
@@ -34,6 +37,16 @@ function App() {
       setTitle('')
     } finally {
       setCreating(false)
+    }
+  }
+
+  async function handleStatus(task: Task, status: Status) {
+    setBusyIds((prev) => [...prev, task.id])
+    try {
+      const updated = await updateTask(task.id, { status })
+      setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
+    } finally {
+      setBusyIds((prev) => prev.filter((id) => id !== task.id))
     }
   }
 
@@ -72,6 +85,18 @@ function App() {
                     <h3>{t.title}</h3>
                     <span className={`priority ${t.priority}`}>{PRIORITY_LABEL[t.priority]}</span>
                     {t.due_date && <p className="due">{t.due_date}</p>}
+                    <div className="status-buttons">
+                      {COLUMNS.map((c) => (
+                        <button
+                          key={c.status}
+                          disabled={t.status === c.status || busyIds.includes(t.id)}
+                          onClick={() => handleStatus(t, c.status)}
+                          aria-label={`${t.title}: ${STATUS_LABEL[c.status]}(으)로 변경`}
+                        >
+                          {c.label}
+                        </button>
+                      ))}
+                    </div>
                   </article>
                 ))}
               </div>

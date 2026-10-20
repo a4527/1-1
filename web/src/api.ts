@@ -26,3 +26,13 @@ export const listTasks = () => request<Task[]>('/api/tasks')
 
 export const createTask = (title: string) =>
   request<Task>('/api/tasks', { method: 'POST', body: JSON.stringify({ title }) })
+
+export interface TaskEdit {
+  title: string
+  description: string | null
+  due_date: string | null
+  priority: Priority
+}
+
+export const updateTask = (id: number, body: TaskEdit | { status: Status }) =>
+  request<Task>(`/api/tasks/${id}`, { method: 'PATCH', body: JSON.stringify(body) })

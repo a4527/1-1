@@ -122,3 +122,15 @@ button:disabled {
   font-size: 13px;
   color: #6b7280;
 }
+
+.status-buttons {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.status-buttons button {
+  flex: 1;
+  padding: 4px 0;
+  font-size: 12px;
+}

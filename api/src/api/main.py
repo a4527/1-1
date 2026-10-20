@@ -1,9 +1,10 @@
 from contextlib import asynccontextmanager
-from typing import Annotated
+from datetime import date
+from typing import Annotated, Literal
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, ConfigDict, StringConstraints
+from pydantic import BaseModel, ConfigDict, StringConstraints, model_validator
 
 from . import store
 
@@ -14,6 +15,28 @@ class TaskCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     title: Title
+
+
+class TaskPatch(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: Title | None = None
+    description: Annotated[str, StringConstraints(max_length=1000)] | None = None
+    due_date: date | None = None
+    priority: Literal["urgent", "normal", "low"] | None = None
+    status: Literal["todo", "in_progress", "done"] | None = None
+
+    @model_validator(mode="after")
+    def check_fields(self) -> "TaskPatch":
+        sent = self.model_fields_set
+        if not sent:
+            raise ValueError("바꿀 필드를 하나 이상 보내야 합니다.")
+        if "status" in sent and len(sent) > 1:
+            raise ValueError("status는 다른 필드와 함께 보낼 수 없습니다.")
+        for name in ("title", "priority", "status"):
+            if name in sent and getattr(self, name) is None:
+                raise ValueError(f"{name}은 null일 수 없습니다.")
+        return self
 
 
 @asynccontextmanager
@@ -45,3 +68,12 @@ def list_tasks() -> list[dict]:
 @app.post("/api/tasks", status_code=201)
 def create_task(body: TaskCreate) -> dict:
     return store.create_task(body.title)
+
+
+@app.patch("/api/tasks/{task_id}")
+def update_task(task_id: int, body: TaskPatch) -> dict:
+    fields = body.model_dump(mode="json", include=body.model_fields_set)
+    task = store.update_task(task_id, fields)
+    if task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return task
