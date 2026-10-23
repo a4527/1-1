@@ -16,6 +16,15 @@ def _connect() -> sqlite3.Connection:
     return conn
 
 
+def check_schema() -> None:
+    """표는 alembic이 만든다. 이전이 안 된 DB로는 서버를 켜지 않는다."""
+    with closing(_connect()) as conn:
+        names = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+        task_cols = {r[1] for r in conn.execute("PRAGMA table_info(tasks)")}
+    if not {"users", "sessions", "tasks"} <= names or "owner_id" not in task_cols:
+        raise RuntimeError(f"DB({DB_PATH})가 최신이 아닙니다. 백업 후 `cd api && uv run alembic upgrade head`를 실행하세요.")
+
+
 def list_tasks(owner_id: int) -> list[dict]:
     with closing(_connect()) as conn:
         rows = conn.execute(f"SELECT {COLUMNS} FROM tasks WHERE owner_id = ? ORDER BY id", (owner_id,)).fetchall()

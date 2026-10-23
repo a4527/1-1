@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from datetime import date
 from typing import Annotated, Literal
 
@@ -52,7 +53,13 @@ class TaskPatch(BaseModel):
         return self
 
 
-app = FastAPI(title="task-flow")
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    store.check_schema()
+    yield
+
+
+app = FastAPI(title="task-flow", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
