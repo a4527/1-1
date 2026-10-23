@@ -13,12 +13,35 @@ export interface Task {
   created_at: string
 }
 
+export interface User {
+  id: number
+  email: string
+}
+
+export class ApiError extends Error {
+  status: number
+  constructor(status: number) {
+    super(String(status))
+    this.status = status
+  }
+}
+
+// 로그인이 필요하다는 응답(401)을 받으면 화면이 로그인으로 보내도록 알린다.
+let onUnauthorized: () => void = () => {}
+export const setUnauthorizedHandler = (fn: () => void) => {
+  onUnauthorized = fn
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
+    credentials: 'include',
     headers: init?.body ? { 'Content-Type': 'application/json' } : undefined,
   })
-  if (!res.ok) throw new Error(String(res.status))
+  if (res.status === 401 && !path.startsWith('/api/auth/login') && !path.startsWith('/api/auth/signup')) {
+    onUnauthorized()
+  }
+  if (!res.ok) throw new ApiError(res.status)
   return res.status === 204 ? (undefined as T) : res.json()
 }
 
@@ -38,3 +61,13 @@ export const updateTask = (id: number, body: TaskEdit | { status: Status }) =>
   request<Task>(`/api/tasks/${id}`, { method: 'PATCH', body: JSON.stringify(body) })
 
 export const deleteTask = (id: number) => request<void>(`/api/tasks/${id}`, { method: 'DELETE' })
+
+export const getMe = () => request<User>('/api/auth/me')
+
+export const signup = (email: string, password: string) =>
+  request<User>('/api/auth/signup', { method: 'POST', body: JSON.stringify({ email, password }) })
+
+export const login = (email: string, password: string) =>
+  request<User>('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) })
+
+export const logout = () => request<void>('/api/auth/logout', { method: 'POST' })

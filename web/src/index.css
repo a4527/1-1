@@ -230,3 +230,65 @@ button:disabled {
   color: #991b1b;
   background: #fee2e2;
 }
+
+.user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.auth-note {
+  padding: 24px;
+  color: #6b7280;
+}
+
+.auth {
+  display: flex;
+  justify-content: center;
+  padding-top: 15vh;
+}
+
+.auth-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 320px;
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.auth-card h1,
+.auth-card h2 {
+  margin: 0;
+}
+
+.auth-card h1 {
+  font-size: 20px;
+}
+
+.auth-card h2 {
+  font-size: 16px;
+  color: #4b5563;
+}
+
+.auth-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.auth-card input {
+  padding: 8px;
+}
+
+.auth-card .link {
+  background: none;
+  border: none;
+  color: #2563eb;
+}
