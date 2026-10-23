@@ -50,6 +50,9 @@
 
 ## 실행
 ```bash
+# DB 준비 (처음 한 번, 그리고 이전 파일이 추가될 때마다)
+cd api && uv run alembic upgrade head
+
 # API
 cd api && uv run fastapi dev
 
@@ -57,3 +60,5 @@ cd api && uv run fastapi dev
 cd web && npm run dev
 ```
 2026-10-19 M0 검증: API `GET /health` 200(CORS 헤더 확인), 화면 `npm run build`·`npm run lint` 통과, Vite 개발 서버 기동 확인. SQLite 파일은 생성되지 않음.
+
+2026-10-23 M2: `uv add alembic`(alembic 1.20.1, sqlalchemy 2.1.6, mako 1.4.3 함께 설치). 표는 앱이 만들지 않고 alembic이 만든다. 테스트: `cd api && uv run python -m unittest discover -s tests`.

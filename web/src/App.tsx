@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { createTask, listTasks, updateTask } from './api'
-import type { Status, Task } from './api'
+import { createTask, getMe, listTasks, logout, setUnauthorizedHandler, updateTask } from './api'
+import type { Status, Task, User } from './api'
 import EditModal from './EditModal'
+import Login from './Login'
 
 const COLUMNS: { status: Status; label: string; empty: string }[] = [
   { status: 'todo', label: '할 일', empty: '할 일이 없습니다.' },
@@ -20,7 +21,7 @@ const SAVE_ERROR = '저장하지 못했습니다. 다시 시도해 주세요.'
 
 type LoadState = 'loading' | 'ready' | 'error'
 
-function App() {
+function Board({ user, onLogout }: { user: User; onLogout: () => void }) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loadState, setLoadState] = useState<LoadState>('loading')
   const [alert, setAlert] = useState('')
@@ -138,6 +139,10 @@ function App() {
           </button>
           {titleError && <p className="field-error">{titleError}</p>}
         </form>
+        <div className="user">
+          <span>{user.email}</span>
+          <button onClick={onLogout}>로그아웃</button>
+        </div>
       </header>
       {alert && (
         <div className="alert" role="alert">
@@ -177,6 +182,50 @@ function App() {
         />
       )}
     </div>
+  )
+}
+
+const LOGIN_PATH = '/login'
+
+type AuthState = { phase: 'checking' } | { phase: 'out' } | { phase: 'in'; user: User }
+
+function App() {
+  const [auth, setAuth] = useState<AuthState>({ phase: 'checking' })
+
+  const goLogin = useCallback(() => {
+    if (window.location.pathname !== LOGIN_PATH) window.history.replaceState(null, '', LOGIN_PATH)
+    setAuth({ phase: 'out' })
+  }, [])
+
+  useEffect(() => {
+    setUnauthorizedHandler(goLogin)
+    getMe()
+      .then((user) => {
+        if (window.location.pathname === LOGIN_PATH) window.history.replaceState(null, '', '/')
+        setAuth({ phase: 'in', user })
+      })
+      .catch(goLogin) // 401이면 로그인 화면으로 이동한다
+  }, [goLogin])
+
+  if (auth.phase === 'checking') return <p className="auth-note">확인하는 중…</p>
+  if (auth.phase === 'out') {
+    return (
+      <Login
+        onDone={(user) => {
+          window.history.replaceState(null, '', '/')
+          setAuth({ phase: 'in', user })
+        }}
+      />
+    )
+  }
+  return (
+    <Board
+      key={auth.user.id}
+      user={auth.user}
+      onLogout={() => {
+        logout().finally(goLogin)
+      }}
+    />
   )
 }
 

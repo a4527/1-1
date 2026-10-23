@@ -1,6 +1,6 @@
 # DATA-MODEL
 
-Task 하나가 가진 필드와 값 규칙을 정리한다. 근거는 `API-SPEC.md`, `DECISIONS.md`, `ARCHITECTURE.md` 3·4절, `PRD.md`다. 보드는 하나뿐이라 표는 `tasks` 하나다. (D-005)
+Task 하나가 가진 필드와 값 규칙을 정리한다. 근거는 `API-SPEC.md`, `DECISIONS.md`, `ARCHITECTURE.md` 3·4절, `PRD.md`다. M1까지 표는 `tasks` 하나였다. (D-005) M2부터 `users`, `sessions` 표가 있고 `tasks`에 `owner_id`가 붙는다. 변경은 `DATA-MIGRATION-PLAN.md`를 본다.
 
 - **확정**: 위 문서가 이미 정한 것. 출처를 적는다.
 - **임의 결정**: 비어 있던 부분(저장 값 표기 등)을 테스트 목적으로 정했다. 실제 사용 전에 다시 검토한다.
