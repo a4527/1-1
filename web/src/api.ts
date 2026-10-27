@@ -1,7 +1,7 @@
 export const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 export type Status = 'todo' | 'in_progress' | 'done'
-export type Priority = 'urgent' | 'normal' | 'low'
+export type Priority = 'LOW' | 'NORMAL' | 'HIGH'
 
 export interface Task {
   id: number
@@ -11,6 +11,7 @@ export interface Task {
   priority: Priority
   status: Status
   created_at: string
+  is_overdue: boolean
 }
 
 export interface User {

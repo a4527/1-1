@@ -37,7 +37,7 @@ class TaskPatch(BaseModel):
     title: Title | None = None
     description: Annotated[str, StringConstraints(max_length=1000)] | None = None
     due_date: date | None = None
-    priority: Literal["urgent", "normal", "low"] | None = None
+    priority: Literal["LOW", "NORMAL", "HIGH"] | None = None
     status: Literal["todo", "in_progress", "done"] | None = None
 
     @model_validator(mode="after")

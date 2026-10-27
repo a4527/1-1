@@ -1,12 +1,23 @@
 import os
 import sqlite3
 from contextlib import closing
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 
 DB_PATH = Path(os.environ.get("TASKFLOW_DB", Path(__file__).parents[2] / "tasks.db"))
 
-COLUMNS = "id, title, description, due_date, priority, status, created_at"
+# 기한 초과는 저장하지 않고 읽을 때 계산한다: 마감일이 오늘보다 이전이고 완료가 아님 (BUSINESS-RULES 3절)
+COLUMNS = (
+    "id, title, description, due_date, priority, status, created_at,"
+    " (due_date IS NOT NULL AND due_date < :today AND status != 'done') AS is_overdue"
+)
+
+# 기한 초과 -> 우선순위(HIGH 먼저) -> 가까운 마감일(없으면 맨 뒤) -> 만든 순서 (BUSINESS-RULES 4절)
+ORDER = (
+    "is_overdue DESC,"
+    " CASE priority WHEN 'HIGH' THEN 0 WHEN 'NORMAL' THEN 1 ELSE 2 END,"
+    " due_date IS NULL, due_date, id"
+)
 
 
 def _connect() -> sqlite3.Connection:
@@ -25,15 +36,25 @@ def check_schema() -> None:
         raise RuntimeError(f"DB({DB_PATH})가 최신이 아닙니다. 백업 후 `cd api && uv run alembic upgrade head`를 실행하세요.")
 
 
+def _task(row: sqlite3.Row) -> dict:
+    return {**dict(row), "is_overdue": bool(row["is_overdue"])}
+
+
 def list_tasks(owner_id: int) -> list[dict]:
     with closing(_connect()) as conn:
-        rows = conn.execute(f"SELECT {COLUMNS} FROM tasks WHERE owner_id = ? ORDER BY id", (owner_id,)).fetchall()
-    return [dict(r) for r in rows]
+        rows = conn.execute(
+            f"SELECT {COLUMNS} FROM tasks WHERE owner_id = :owner_id ORDER BY {ORDER}",
+            {"owner_id": owner_id, "today": _today()},
+        ).fetchall()
+    return [_task(r) for r in rows]
 
 
 def get_task(conn: sqlite3.Connection, owner_id: int, task_id: int) -> dict | None:
-    row = conn.execute(f"SELECT {COLUMNS} FROM tasks WHERE id = ? AND owner_id = ?", (task_id, owner_id)).fetchone()
-    return dict(row) if row else None
+    row = conn.execute(
+        f"SELECT {COLUMNS} FROM tasks WHERE id = :id AND owner_id = :owner_id",
+        {"id": task_id, "owner_id": owner_id, "today": _today()},
+    ).fetchone()
+    return _task(row) if row else None
 
 
 def create_task(owner_id: int, title: str) -> dict:
@@ -108,6 +129,11 @@ def get_session_user(token_hash: str) -> dict | None:
 def delete_session(token_hash: str) -> None:
     with closing(_connect()) as conn, conn:
         conn.execute("DELETE FROM sessions WHERE token_hash = ?", (token_hash,))
+
+
+def _today() -> str:
+    """'오늘'은 서버의 로컬 날짜다(created_at, _now와 같은 기준)."""
+    return date.today().isoformat()
 
 
 def _now() -> str:
