@@ -84,7 +84,7 @@ class AuthFlow(unittest.TestCase):
 
         # 로그인 뒤 시나리오: 생성 -> 수정 -> 상태 변경 -> 삭제
         t = a.post("/api/tasks", json={"title": "시나리오"}).json()
-        self.assertEqual(a.patch(f"/api/tasks/{t['id']}", json={"title": "수정됨", "priority": "urgent"}).json()["title"], "수정됨")
+        self.assertEqual(a.patch(f"/api/tasks/{t['id']}", json={"title": "수정됨", "priority": "HIGH"}).json()["title"], "수정됨")
         self.assertEqual(a.patch(f"/api/tasks/{t['id']}", json={"status": "done"}).json()["status"], "done")
         self.assertEqual(a.delete(f"/api/tasks/{t['id']}").status_code, 204)
         self.assertEqual(a.delete(f"/api/tasks/{t['id']}").status_code, 404)

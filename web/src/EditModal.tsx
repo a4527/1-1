@@ -4,9 +4,9 @@ import { deleteTask, updateTask } from './api'
 import type { Priority, Task } from './api'
 
 const PRIORITIES: { value: Priority; label: string }[] = [
-  { value: 'urgent', label: '임박' },
-  { value: 'normal', label: '보통' },
-  { value: 'low', label: '여유' },
+  { value: 'HIGH', label: '높음' },
+  { value: 'NORMAL', label: '보통' },
+  { value: 'LOW', label: '낮음' },
 ]
 
 interface Props {

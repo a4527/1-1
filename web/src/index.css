@@ -107,14 +107,33 @@ button:disabled {
   background: #e5e7eb;
 }
 
-.priority.urgent {
-  color: #991b1b;
-  background: #fee2e2;
+.priority.HIGH {
+  color: #9a3412;
+  background: #ffedd5;
 }
 
-.priority.low {
+.priority.LOW {
   color: #1e40af;
   background: #dbeafe;
+}
+
+.card.overdue {
+  border-left: 4px solid #b91c1c;
+}
+
+.badge-overdue {
+  margin-left: 6px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  border-radius: 999px;
+  background: #b91c1c;
+}
+
+.card.overdue .due {
+  font-weight: 600;
+  color: #b91c1c;
 }
 
 .due {

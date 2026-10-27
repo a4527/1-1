@@ -13,7 +13,7 @@ const COLUMNS: { status: Status; label: string; empty: string }[] = [
 
 const STATUS_LABEL = Object.fromEntries(COLUMNS.map((c) => [c.status, c.label]))
 
-const PRIORITY_LABEL = { urgent: '임박', normal: '보통', low: '여유' }
+const PRIORITY_LABEL = { HIGH: '높음', NORMAL: '보통', LOW: '낮음' }
 
 const FIRST_TASK_HINT = '위 입력창에 제목을 적어 첫 Task를 만들어 보세요.'
 const LOAD_ERROR = '카드를 불러오지 못했습니다. API 서버가 켜져 있는지 확인하세요.'
@@ -48,6 +48,15 @@ function Board({ user, onLogout }: { user: User; onLogout: () => void }) {
     load()
   }
 
+  // 저장 뒤에는 서버가 정한 순서와 기한 초과를 그대로 쓴다. 다시 불러오지 못하면 받은 응답만 반영한다.
+  async function refreshOrApply(fallback: (prev: Task[]) => Task[]) {
+    try {
+      setTasks(await listTasks())
+    } catch {
+      setTasks(fallback)
+    }
+  }
+
   async function handleCreate(e: FormEvent) {
     e.preventDefault()
     if (!title.trim()) {
@@ -57,7 +66,7 @@ function Board({ user, onLogout }: { user: User; onLogout: () => void }) {
     setCreating(true)
     try {
       const created = await createTask(title.trim())
-      setTasks((prev) => [...prev, created])
+      await refreshOrApply((prev) => [...prev, created])
       setTitle('')
       setAlert('')
     } catch {
@@ -71,7 +80,7 @@ function Board({ user, onLogout }: { user: User; onLogout: () => void }) {
     setBusyIds((prev) => [...prev, task.id])
     try {
       const updated = await updateTask(task.id, { status })
-      setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
+      await refreshOrApply((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
       setAlert('')
     } catch {
       setAlert(SAVE_ERROR)
@@ -96,9 +105,10 @@ function Board({ user, onLogout }: { user: User; onLogout: () => void }) {
       return <p className="column-note">{text}</p>
     }
     return cards.map((t) => (
-      <article className="card" key={t.id} onClick={() => setEditingId(t.id)}>
+      <article className={`card${t.is_overdue ? ' overdue' : ''}`} key={t.id} onClick={() => setEditingId(t.id)}>
         <h3>{t.title}</h3>
         <span className={`priority ${t.priority}`}>{PRIORITY_LABEL[t.priority]}</span>
+        {t.is_overdue && <span className="badge-overdue">기한 초과</span>}
         {t.due_date && <p className="due">{t.due_date}</p>}
         <div className="status-buttons">
           {COLUMNS.map((c) => (
@@ -170,7 +180,7 @@ function Board({ user, onLogout }: { user: User; onLogout: () => void }) {
           task={editing}
           onClose={() => setEditingId(null)}
           onSaved={(saved) => {
-            setTasks((prev) => prev.map((t) => (t.id === saved.id ? saved : t)))
+            refreshOrApply((prev) => prev.map((t) => (t.id === saved.id ? saved : t)))
             setEditingId(null)
             setAlert('')
           }}
