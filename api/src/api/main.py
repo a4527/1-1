@@ -6,7 +6,8 @@ from fastapi import Cookie, Depends, FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, StringConstraints, field_validator, model_validator
 
-from . import auth, store
+from . import auth, store, suggest
+from .suggest import Priority
 
 Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
 
@@ -31,13 +32,20 @@ class TaskCreate(BaseModel):
     title: Title
 
 
+class SuggestRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: Title
+    description: Annotated[str, StringConstraints(max_length=1000)] = ""
+
+
 class TaskPatch(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     title: Title | None = None
     description: Annotated[str, StringConstraints(max_length=1000)] | None = None
     due_date: date | None = None
-    priority: Literal["LOW", "NORMAL", "HIGH"] | None = None
+    priority: Priority | None = None
     status: Literal["todo", "in_progress", "done"] | None = None
 
     @model_validator(mode="after")
@@ -121,6 +129,11 @@ def list_tasks(user: dict = Depends(auth.current_user)) -> list[dict]:
 @app.post("/api/tasks", status_code=201)
 def create_task(body: TaskCreate, user: dict = Depends(auth.current_user)) -> dict:
     return store.create_task(user["id"], body.title)
+
+
+@app.post("/api/tasks/suggest")
+def suggest_task(body: SuggestRequest, user: dict = Depends(auth.current_user)) -> dict:
+    return suggest.suggest(body.title, body.description)
 
 
 @app.patch("/api/tasks/{task_id}")
