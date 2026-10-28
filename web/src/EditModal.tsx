@@ -1,13 +1,8 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { deleteTask, updateTask } from './api'
+import { PRIORITIES, deleteTask, updateTask } from './api'
 import type { Priority, Task } from './api'
-
-const PRIORITIES: { value: Priority; label: string }[] = [
-  { value: 'HIGH', label: '높음' },
-  { value: 'NORMAL', label: '보통' },
-  { value: 'LOW', label: '낮음' },
-]
+import { useSuggest } from './useSuggest'
 
 interface Props {
   task: Task
@@ -24,6 +19,10 @@ function EditModal({ task, onClose, onSaved, onDeleted }: Props) {
   const [titleError, setTitleError] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const suggest = useSuggest((s) => {
+    setPriority(s.priority)
+    setDueDate(s.due_date ?? '')
+  })
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
@@ -51,6 +50,14 @@ function EditModal({ task, onClose, onSaved, onDeleted }: Props) {
       setError('저장하지 못했습니다. 다시 시도해 주세요.')
       setBusy(false)
     }
+  }
+
+  function handleSuggest() {
+    if (!title.trim()) {
+      setTitleError('제목을 입력해 주세요.')
+      return
+    }
+    suggest.run(title.trim(), description)
   }
 
   async function handleDelete() {
@@ -98,6 +105,12 @@ function EditModal({ task, onClose, onSaved, onDeleted }: Props) {
             onChange={(e) => setDescription(e.target.value)}
           />
         </label>
+        <span className="row suggest">
+          <button type="button" disabled={suggest.suggesting} onClick={handleSuggest}>
+            AI 제안
+          </button>
+          {suggest.suggesting && <span className="suggest-note">제안을 받는 중...</span>}
+        </span>
         <label>
           마감일
           <span className="row">
@@ -121,6 +134,8 @@ function EditModal({ task, onClose, onSaved, onDeleted }: Props) {
             </label>
           ))}
         </fieldset>
+        {suggest.reason && <p className="suggest-note">AI 제안 이유: {suggest.reason}</p>}
+        {suggest.error && <p className="field-error">{suggest.error}</p>}
         {error && <p className="field-error">{error}</p>}
         <div className="modal-actions">
           <button type="button" className="danger" disabled={busy} onClick={handleDelete}>

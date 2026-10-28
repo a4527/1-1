@@ -21,6 +21,7 @@ from api.main import app
 
 API_DIR = Path(__file__).parents[1]
 URL = "/api/tasks/suggest"
+GEN_URL = "/api/tasks/generate"
 BODY = {"title": "보고서 제출", "description": "내일까지 팀장에게"}
 
 
@@ -61,12 +62,12 @@ class Suggest(unittest.TestCase):
         with sqlite3.connect(store.DB_PATH) as conn:
             return conn.execute("SELECT * FROM tasks ORDER BY id").fetchall()
 
-    def call(self, message=None, error=None, body=BODY):
+    def call(self, message=None, error=None, body=BODY, url=URL):
         create = mock.Mock(return_value=message, side_effect=error)
         fake = mock.Mock()
         fake.messages.create = create
         with mock.patch("api.suggest.anthropic.Anthropic", return_value=fake):
-            res = self.client.post(URL, json=body)
+            res = self.client.post(url, json=body)
         self.assertEqual(self.dump(), self.before)  # 어떤 경우에도 DB는 그대로
         return res, create
 
@@ -137,6 +138,65 @@ class Suggest(unittest.TestCase):
         self.assertEqual(res.status_code, 422)
         anon = TestClient(app, base_url="http://localhost")
         self.assertEqual(anon.post(URL, json=BODY).status_code, 401)
+
+    def test_generate_ok(self) -> None:
+        text = (
+            '```json\n{"tasks": [{"title": " 장보기 ", "description": "채소", "priority": "HIGH", "due_date": "2026-10-29"},'
+            ' {"title": "요리"}]}\n```'
+        )
+        res, create = self.call(reply(text), body={"topic": "저녁 파티", "description": "친구 6명"}, url=GEN_URL)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()["reason"], "")
+        self.assertEqual(
+            res.json()["tasks"],
+            [
+                {"title": "장보기", "description": "채소", "priority": "HIGH", "due_date": "2026-10-29"},
+                {"title": "요리", "description": "", "priority": "NORMAL", "due_date": None},
+            ],
+        )
+        kw = create.call_args.kwargs
+        self.assertEqual((kw["model"], kw["thinking"]), ("claude-haiku-5-5", {"type": "disabled"}))
+        self.assertIn("저녁 파티", kw["messages"][0]["content"])
+        self.assertIn("친구 6명", kw["messages"][0]["content"])
+        self.assertIn(date.today().isoformat(), kw["messages"][0]["content"])
+
+    def test_generate_too_vague_returns_reason(self) -> None:
+        text = '{"reason": "설명이 부족해서 할 일을 만들기 애매합니다.", "tasks": []}'
+        res, _ = self.call(reply(text), body={"topic": "그거"}, url=GEN_URL)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json(), {"tasks": [], "reason": "설명이 부족해서 할 일을 만들기 애매합니다."})
+
+    def test_generate_bad_output_is_502(self) -> None:
+        bad = [
+            reply("JSON 아님"),
+            reply('{"tasks": []}'),
+            reply('{"tasks": "x"}'),
+            reply('{"tasks": [1]}'),
+            reply('{"tasks": [{"title": ""}]}'),
+            reply('{"tasks": [{"title": "a", "priority": "URGENT"}]}'),
+            reply('{"tasks": [{"title": "a", "due_date": "내일"}]}'),
+            reply('{"tasks": [{"title": "' + "가" * 101 + '"}]}'),
+            reply('{"reason": 3, "tasks": [{"title": "a"}]}'),
+            reply('{"reason": "  ", "tasks": []}'),
+            reply('{"tasks": [{"title": "a"', stop_reason="max_tokens"),
+        ]
+        for message in bad:
+            with self.subTest(text=message.content[0].text[:40]):
+                res, _ = self.call(message, body={"topic": "t"}, url=GEN_URL)
+                self.assertEqual((res.status_code, res.json()["detail"]), (502, "제안 실패"))
+
+    def test_generate_errors_and_validation(self) -> None:
+        res, _ = self.call(error=status_error(anthropic.RateLimitError, 429), body={"topic": "t"}, url=GEN_URL)
+        self.assertEqual(res.status_code, 503)
+        with mock.patch.dict(os.environ):
+            os.environ.pop("ANTHROPIC_API_KEY")
+            res, _ = self.call(reply("{}"), body={"topic": "t"}, url=GEN_URL)
+        self.assertEqual((res.status_code, res.json()["detail"]), (503, "AI 기능 꺼짐"))
+        res, create = self.call(reply("{}"), body={"topic": "  "}, url=GEN_URL)
+        self.assertEqual(res.status_code, 422)
+        create.assert_not_called()
+        anon = TestClient(app, base_url="http://localhost")
+        self.assertEqual(anon.post(GEN_URL, json={"topic": "t"}).status_code, 401)
 
 
 if __name__ == "__main__":

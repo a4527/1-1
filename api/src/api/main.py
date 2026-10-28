@@ -39,6 +39,13 @@ class SuggestRequest(BaseModel):
     description: Annotated[str, StringConstraints(max_length=1000)] = ""
 
 
+class GenerateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    topic: Title
+    description: Annotated[str, StringConstraints(max_length=1000)] = ""
+
+
 class TaskPatch(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -134,6 +141,11 @@ def create_task(body: TaskCreate, user: dict = Depends(auth.current_user)) -> di
 @app.post("/api/tasks/suggest")
 def suggest_task(body: SuggestRequest, user: dict = Depends(auth.current_user)) -> dict:
     return suggest.suggest(body.title, body.description)
+
+
+@app.post("/api/tasks/generate")
+def generate_tasks(body: GenerateRequest, user: dict = Depends(auth.current_user)) -> dict:
+    return suggest.generate(body.topic, body.description)
 
 
 @app.patch("/api/tasks/{task_id}")
