@@ -1,0 +1,86 @@
+/* 오늘 브리핑: 상단 바(등록 폼)와 보드 사이. 보드 높이를 다 뺏지 않도록 카드는 안에서 스크롤한다. */
+.briefing {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 24px 0;
+}
+
+.briefing-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 720px;
+  max-height: 35vh;
+  padding: 12px 16px;
+  overflow-y: auto;
+  font-size: 14px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.briefing-card h2 {
+  margin: 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.briefing-card ol,
+.briefing-card ul {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.briefing-card ol li {
+  display: flex;
+  gap: 6px;
+}
+
+.briefing-card ul li::before {
+  content: '· ';
+  color: #9ca3af;
+}
+
+.briefing-card li {
+  overflow-wrap: anywhere;
+}
+
+.briefing-card .cheer {
+  margin: 0;
+  color: #374151;
+}
+
+.briefing-card > button {
+  align-self: flex-end;
+}
+
+@media (max-width: 900px) {
+  .briefing {
+    padding: 12px 16px 0;
+  }
+}
+
+/* 모바일: 페이지 전체를 스크롤하므로 카드 높이를 묶지 않는다. */
+@media (max-width: 640px) {
+  .briefing > button {
+    width: 100%;
+    min-height: 36px;
+  }
+
+  .briefing-card {
+    max-height: none;
+  }
+
+  .briefing-card > button {
+    align-self: stretch;
+    min-height: 36px;
+  }
+}

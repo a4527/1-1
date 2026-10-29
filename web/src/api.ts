@@ -91,6 +91,15 @@ export const generateTasks = (topic: string, description: string) =>
     body: JSON.stringify({ topic, description }),
   })
 
+export interface Briefing {
+  top3: { id: number; reason: string }[]
+  later: number[]
+  cheer: string
+}
+
+// 끝나지 않은 할 일로 오늘 브리핑을 받아 온다. 서버는 저장하지 않는다.
+export const getBriefing = () => request<Briefing>('/api/tasks/briefing', { method: 'POST' })
+
 export const deleteTask = (id: number) => request<void>(`/api/tasks/${id}`, { method: 'DELETE' })
 
 export const getMe = () => request<User>('/api/auth/me')
