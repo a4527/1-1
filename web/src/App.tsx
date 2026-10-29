@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { PRIORITIES, createTask, deleteTask, getMe, listTasks, logout, setUnauthorizedHandler, updateTask } from './api'
 import type { Priority, Status, Task, User } from './api'
+import BriefingCard from './BriefingCard'
 import EditModal from './EditModal'
 import GeneratePanel from './GeneratePanel'
 import Login from './Login'
@@ -272,6 +273,7 @@ function Board({ user, onLogout }: { user: User; onLogout: () => void }) {
           <button onClick={() => setAlert('')}>닫기</button>
         </div>
       )}
+      <BriefingCard tasks={tasks} />
       <main className="board">
         {COLUMNS.map(({ status, label, empty }) => {
           const cards = tasks.filter((t) => t.status === status)

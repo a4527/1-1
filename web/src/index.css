@@ -279,7 +279,10 @@ button:disabled {
   gap: 12px;
   width: 420px;
   max-width: calc(100vw - 32px);
+  max-height: calc(100dvh - 32px);
   padding: 20px;
+  overflow-y: auto;
+  box-sizing: border-box;
   background: #fff;
   border-radius: 8px;
 }
@@ -462,4 +465,113 @@ button:disabled {
 
 .candidates .block {
   display: block;
+}
+
+/* 좁은 화면: 상단 바를 두 줄로 나눠 제목·사용자 정보를 위에, 입력 폼을 아래에 둔다. */
+@media (max-width: 900px) {
+  .topbar {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  .topbar form {
+    flex-basis: 100%;
+    order: 1;
+  }
+
+  .user {
+    margin-left: auto;
+  }
+
+  .board {
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  .alert {
+    padding: 8px 16px;
+  }
+}
+
+/* 모바일: 세 열을 세로로 쌓고, 열 안 스크롤 대신 페이지 전체를 스크롤한다. */
+@media (max-width: 640px) {
+  .app {
+    height: auto;
+    min-height: 100dvh;
+  }
+
+  .board {
+    grid-template-columns: 1fr;
+  }
+
+  .cards {
+    overflow-y: visible;
+  }
+
+  .column h2 {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #e5e7eb;
+    border-radius: 8px 8px 0 0;
+  }
+
+  .topbar h1 {
+    font-size: 18px;
+  }
+
+  .user span {
+    max-width: 40vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* iOS가 입력칸을 누를 때 화면을 확대하지 않도록 16px 이상으로 둔다. */
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+
+  /* 손가락으로 누르기 쉽게 버튼 높이를 키운다. */
+  button,
+  .card-actions select {
+    min-height: 36px;
+  }
+
+  .card-actions select,
+  .card-actions button {
+    font-size: 14px;
+  }
+
+  .extra-row > button {
+    flex: 1 1 auto;
+  }
+
+  .backdrop {
+    align-items: flex-end;
+  }
+
+  .modal {
+    width: 100%;
+    max-width: none;
+    max-height: 90dvh;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .modal .row {
+    flex-wrap: wrap;
+  }
+
+  .auth {
+    padding: 10vh 16px 0;
+  }
+
+  .auth-card {
+    width: 100%;
+    max-width: 320px;
+    box-sizing: border-box;
+  }
 }
