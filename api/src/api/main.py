@@ -6,7 +6,7 @@ from fastapi import Cookie, Depends, FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, StringConstraints, field_validator, model_validator
 
-from . import auth, store, suggest
+from . import auth, briefing, store, suggest
 from .suggest import Priority
 
 Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
@@ -44,6 +44,17 @@ class GenerateRequest(BaseModel):
 
     topic: Title
     description: Annotated[str, StringConstraints(max_length=1000)] = ""
+
+
+class BriefingTop(BaseModel):
+    id: int
+    reason: str
+
+
+class BriefingResponse(BaseModel):
+    top3: list[BriefingTop]
+    later: list[int]
+    cheer: str
 
 
 class TaskPatch(BaseModel):
@@ -146,6 +157,11 @@ def suggest_task(body: SuggestRequest, user: dict = Depends(auth.current_user)) 
 @app.post("/api/tasks/generate")
 def generate_tasks(body: GenerateRequest, user: dict = Depends(auth.current_user)) -> dict:
     return suggest.generate(body.topic, body.description)
+
+
+@app.post("/api/tasks/briefing", response_model=BriefingResponse)
+def task_briefing(user: dict = Depends(auth.current_user)) -> dict:
+    return briefing.briefing(user["id"])
 
 
 @app.patch("/api/tasks/{task_id}")
