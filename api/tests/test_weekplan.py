@@ -129,6 +129,14 @@ class WeekPlan(unittest.TestCase):
         self.assertEqual(plan[WEEK[2]], [self.soon])  # 이번 주 마감은 그날
         self.assertEqual(plan[WEEK[6]], [self.far, self.free])  # 먼 마감·마감 없음은 마지막 날(보드 순서)
 
+    def test_late_placement_pulled_back(self) -> None:
+        days = [{"date": WEEK[6], "ids": [self.late, self.soon]}, {"date": WEEK[1], "ids": [self.free]}]
+        res, _ = self.call(answer(days))
+        plan = self.plan(res)
+        self.assertEqual(plan[WEEK[0]], [self.late])  # 기한 초과는 마지막 날로 미뤄도 첫날로
+        self.assertEqual(plan[WEEK[2]], [self.soon])  # 마감 뒤로 놓으면 마감일로 당긴다
+        self.assertEqual(plan[WEEK[1]], [self.free])  # 규칙에 맞는 배치는 그대로
+
     def test_unknown_ids_and_dates_dropped(self) -> None:
         days = [
             {"date": WEEK[0], "ids": [9999, self.other_id, self.done, str(self.free), True, self.late, self.late]},

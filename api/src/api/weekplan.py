@@ -37,6 +37,15 @@ def _fallback_day(task: dict, week: list[str]) -> str:
     return week[-1]
 
 
+def _rule_day(task: dict, day: str, week: list[str]) -> str:
+    """AI가 고른 날이 규칙에 어긋나면 당긴다: 기한 초과는 첫날, 이번 주 마감은 마감일보다 늦지 않게."""
+    if task["is_overdue"]:
+        return week[0]
+    if task["due_date"] in week and day > task["due_date"]:
+        return task["due_date"]
+    return day
+
+
 def _parse(message, tasks: list[dict], week: list[str]) -> dict:
     data = _load_json(message)
     if not isinstance(data, dict):
@@ -44,7 +53,7 @@ def _parse(message, tasks: list[dict], week: list[str]) -> dict:
     day_items, note = data.get("days"), data.get("note")
     if not isinstance(day_items, list) or not isinstance(note, str) or not note.strip():
         raise _fail()
-    known = {t["id"] for t in tasks}
+    by_id = {t["id"]: t for t in tasks}
     plan: dict[str, list[int]] = {d: [] for d in week}
     placed: set[int] = set()
     for item in day_items:
@@ -54,9 +63,9 @@ def _parse(message, tasks: list[dict], week: list[str]) -> dict:
         if day not in plan:  # 이번 주 밖이거나 형식이 틀린 날짜는 버린다
             continue
         for value in item.get("ids", []):
-            if isinstance(value, int) and not isinstance(value, bool) and value in known and value not in placed:
+            if isinstance(value, int) and not isinstance(value, bool) and value in by_id and value not in placed:
                 placed.add(value)
-                plan[day].append(value)
+                plan[_rule_day(by_id[value], day, week)].append(value)
     for t in tasks:  # 마감 없는 일까지 모든 할 일이 표에 들어가게 한다
         if t["id"] not in placed:
             plan[_fallback_day(t, week)].append(t["id"])
