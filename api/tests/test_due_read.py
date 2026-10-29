@@ -18,7 +18,7 @@ from api import store
 from api.main import app
 
 API_DIR = Path(__file__).parents[1]
-BAD_DUES = ["다음주", "2026-1-5", "2026-02-30", "2026/10/01", ""]
+BAD_DUES = ["다음주", "2026-1-5", "2026-02-30", "2026/10/01", "", b"\xff"]  # 마지막은 바이트(BLOB): 고치기 전엔 보드가 500
 
 
 class DueRead(unittest.TestCase):
