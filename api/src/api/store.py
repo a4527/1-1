@@ -7,9 +7,11 @@ from pathlib import Path
 DB_PATH = Path(os.environ.get("TASKFLOW_DB", Path(__file__).parents[2] / "tasks.db"))
 
 # 기한 초과는 저장하지 않고 읽을 때 계산한다: 마감일이 오늘보다 이전이고 완료가 아님 (BUSINESS-RULES 3절)
+# DB에 들어간 규칙 밖 마감일(실제 YYYY-MM-DD 날짜가 아닌 값)은 마감일 없음으로 읽는다
+DUE = "(CASE WHEN date(due_date) IS due_date THEN due_date END)"
 COLUMNS = (
-    "id, title, description, due_date, priority, status, created_at,"
-    " (due_date IS NOT NULL AND due_date < :today AND status != 'done') AS is_overdue"
+    f"id, title, description, {DUE} AS due_date, priority, status, created_at,"
+    f" ({DUE} IS NOT NULL AND {DUE} < :today AND status != 'done') AS is_overdue"
 )
 
 # 기한 초과 -> 우선순위(HIGH 먼저) -> 가까운 마감일(없으면 맨 뒤) -> 만든 순서 (BUSINESS-RULES 4절)
