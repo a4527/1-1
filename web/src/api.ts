@@ -100,6 +100,14 @@ export interface Briefing {
 // 끝나지 않은 할 일로 오늘 브리핑을 받아 온다. 서버는 저장하지 않는다.
 export const getBriefing = () => request<Briefing>('/api/tasks/briefing', { method: 'POST' })
 
+export interface WeekPlan {
+  days: { date: string; ids: number[] }[]
+  note: string
+}
+
+// 끝나지 않은 할 일을 오늘부터 7일에 나눈 계획을 받아 온다. 서버는 저장하지 않는다.
+export const getWeekPlan = () => request<WeekPlan>('/api/tasks/weekplan', { method: 'POST' })
+
 export const deleteTask = (id: number) => request<void>(`/api/tasks/${id}`, { method: 'DELETE' })
 
 export const getMe = () => request<User>('/api/auth/me')

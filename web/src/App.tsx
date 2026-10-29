@@ -6,6 +6,7 @@ import BriefingCard from './BriefingCard'
 import EditModal from './EditModal'
 import GeneratePanel from './GeneratePanel'
 import Login from './Login'
+import WeekPlanCard from './WeekPlanCard'
 import { useGenerate } from './useGenerate'
 import { useSuggest } from './useSuggest'
 
@@ -274,6 +275,7 @@ function Board({ user, onLogout }: { user: User; onLogout: () => void }) {
         </div>
       )}
       <BriefingCard tasks={tasks} />
+      <WeekPlanCard tasks={tasks} />
       <main className="board">
         {COLUMNS.map(({ status, label, empty }) => {
           const cards = tasks.filter((t) => t.status === status)
