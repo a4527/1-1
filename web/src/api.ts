@@ -1,3 +1,5 @@
+import type { CommandResponse } from './types'
+
 export const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 export type Status = 'todo' | 'in_progress' | 'done'
@@ -27,8 +29,8 @@ export interface User {
 
 export class ApiError extends Error {
   status: number
-  constructor(status: number) {
-    super(String(status))
+  constructor(status: number, detail?: string) {
+    super(detail ?? String(status))
     this.status = status
   }
 }
@@ -48,7 +50,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (res.status === 401 && !path.startsWith('/api/auth/login') && !path.startsWith('/api/auth/signup')) {
     onUnauthorized()
   }
-  if (!res.ok) throw new ApiError(res.status)
+  if (!res.ok) {
+    const data = await res.json().catch(() => null)
+    const detail = typeof data?.detail === 'string'
+      ? data.detail
+      : Array.isArray(data?.detail)
+        ? data.detail.map((item: { msg?: string }) => item?.msg).filter(Boolean).join('\n')
+        : undefined
+    throw new ApiError(res.status, detail || undefined)
+  }
   return res.status === 204 ? (undefined as T) : res.json()
 }
 
@@ -64,7 +74,7 @@ export interface TaskEdit {
   priority: Priority
 }
 
-export const updateTask = (id: number, body: TaskEdit | { status: Status }) =>
+export const updateTask = (id: number, body: TaskEdit | { status: Status } | { due_date: string | null }) =>
   request<Task>(`/api/tasks/${id}`, { method: 'PATCH', body: JSON.stringify(body) })
 
 export interface Suggestion {
@@ -99,6 +109,9 @@ export interface Briefing {
 
 // 끝나지 않은 할 일로 오늘 브리핑을 받아 온다. 서버는 저장하지 않는다.
 export const getBriefing = () => request<Briefing>('/api/tasks/briefing', { method: 'POST' })
+
+export const commandTasks = (text: string) =>
+  request<CommandResponse>('/api/tasks/command', { method: 'POST', body: JSON.stringify({ text }) })
 
 export interface WeekPlan {
   days: { date: string; ids: number[] }[]

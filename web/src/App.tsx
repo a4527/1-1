@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { PRIORITIES, createTask, deleteTask, getMe, listTasks, logout, setUnauthorizedHandler, updateTask } from './api'
 import type { Priority, Status, Task, User } from './api'
 import BriefingCard from './BriefingCard'
+import CommandPanel from './CommandPanel'
 import EditModal from './EditModal'
 import GeneratePanel from './GeneratePanel'
 import Login from './Login'
@@ -275,6 +276,7 @@ function Board({ user, onLogout }: { user: User; onLogout: () => void }) {
         </div>
       )}
       <BriefingCard tasks={tasks} />
+      <CommandPanel tasks={tasks} onTasksChange={setTasks} disabled={loadState !== 'ready'} />
       <WeekPlanCard tasks={tasks} />
       <main className="board">
         {COLUMNS.map(({ status, label, empty }) => {
