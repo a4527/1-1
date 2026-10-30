@@ -44,6 +44,7 @@ class AuthFlow(unittest.TestCase):
         self.assertEqual(c.post("/api/tasks", json={"title": "x"}).status_code, 401)
         self.assertEqual(c.patch("/api/tasks/1", json={"title": "x"}).status_code, 401)
         self.assertEqual(c.delete("/api/tasks/1").status_code, 401)
+        self.assertEqual(c.post("/api/tasks/weekplan").status_code, 401)
         self.assertEqual(c.get("/api/auth/me").status_code, 401)
 
     def test_signup_login_me_logout(self) -> None:

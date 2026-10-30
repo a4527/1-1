@@ -6,7 +6,8 @@ from fastapi import Cookie, Depends, FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, StringConstraints, field_validator, model_validator
 
-from . import auth, briefing, store, suggest
+from . import auth, briefing, command, store, suggest, weekplan
+from .rules import CommandText
 from .suggest import Priority
 
 Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
@@ -51,10 +52,38 @@ class BriefingTop(BaseModel):
     reason: str
 
 
+class CommandRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    text: CommandText
+
+
+class CommandAction(BaseModel):
+    kind: Literal["add", "due", "done"]
+    id: int | None
+    title: str | None
+    value: str | None
+
+
+class CommandResponse(BaseModel):
+    actions: list[CommandAction]
+    ask: str | None
+
+
 class BriefingResponse(BaseModel):
     top3: list[BriefingTop]
     later: list[int]
     cheer: str
+
+
+class WeekPlanDay(BaseModel):
+    date: str
+    ids: list[int]
+
+
+class WeekPlanResponse(BaseModel):
+    days: list[WeekPlanDay]
+    note: str
 
 
 class TaskPatch(BaseModel):
@@ -162,6 +191,16 @@ def generate_tasks(body: GenerateRequest, user: dict = Depends(auth.current_user
 @app.post("/api/tasks/briefing", response_model=BriefingResponse)
 def task_briefing(user: dict = Depends(auth.current_user)) -> dict:
     return briefing.briefing(user["id"])
+
+
+@app.post("/api/tasks/weekplan", response_model=WeekPlanResponse)
+def task_weekplan(user: dict = Depends(auth.current_user)) -> dict:
+    return weekplan.weekplan(user["id"])
+
+
+@app.post("/api/tasks/command", response_model=CommandResponse)
+def task_command(body: CommandRequest, user: dict = Depends(auth.current_user)) -> dict:
+    return command.command(user["id"], body.text)
 
 
 @app.patch("/api/tasks/{task_id}")
